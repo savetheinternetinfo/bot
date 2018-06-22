@@ -1,7 +1,12 @@
 "use strict";
 
 let fs      = require("fs");
+let ms      = require("ms");
 let request = require("request");
+
+let isset = function(obj){ 
+    return !!(obj && obj !== null && (typeof obj === 'string' || typeof obj === 'number' && obj !== "") || obj === 0); 
+};
 
 let init = function(){
     const tmppath = "./tmpdata";
@@ -25,26 +30,49 @@ let timer = function(time, callback){
     }, ms(time));
 };
 
+let unmute = function(user, channel){
+    channel.overwritePermissions(user, {
+        SEND_MESSAGES: true,
+        ADD_REACTIONS: true
+    }).catch(console.error);
+    channel.send(`${user.user} you just got unmuted`);
+    log("User " + user.user + " was unmuted.");
+};
+
+let mute = function(user, channel, time){
+    channel.overwritePermissions(user, {
+        SEND_MESSAGES: false,
+        ADD_REACTIONS: false
+    }).catch(console.error);
+    log("User " + user.user + " was muted.");
+
+    if (isset(time)){
+        timer(time, function(){
+            unmute(user, channel);
+        });
+    }
+};
+
 let watermark = function(fileName, callback){
     gm(fileName)
-        .out('-rotate')
+        .out("-rotate")
         .out(-90)
-        .out('-background')
-        .out('rgba(0, 0, 0, .75)')
-        .out('-fill')
-        .out('#FFFFFF')
-        .font('./fonts/BebasNeue.otf')
+        .out("-background")
+        .out("rgba(0, 0, 0, .75)")
+        .out("-fill")
+        .out("#FFFFFF")
+        .font("./fonts/BebasNeue.otf")
         .pointSize(30)
-        .gravity('South')
-        .out('-size')
+        .gravity("South")
+        .out("-size")
         .out(245)
-        .out('caption:savetheinternet.info')
-        .out('-geometry')
-        .out('+0+10')
-        .out('-composite')
-        .out('-rotate')
+        .out("caption:savetheinternet.info")
+        .out("-geometry")
+        .out("+0+10")
+        .out("-composite")
+        .out("-rotate")
         .out(90)
-        .write('watermark.png', function(err){
+        .write("watermark.png", function(err){
             if (err){
                 log(err, true);
                 return console.dir(arguments);
@@ -55,8 +83,11 @@ let watermark = function(fileName, callback){
 };
 
 module.exports = {
+    isset: isset,
     init: init,
     download: download,
     timer: timer,
+    unmute, unmute,
+    mute: mute,
     watermark: watermark
 };

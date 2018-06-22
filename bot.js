@@ -2,7 +2,6 @@
 
 let fs      = require("fs");
 let request = require("request");
-let ms      = require("ms");
 let Discord = require("discord.js");
 
 let conf    = require("./utils/configurator");
@@ -46,7 +45,24 @@ client.on("message", async message => {
     const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
     const command = args.shift().toLowerCase();
 
-    if (command === "wm"){
+    log("User \"" + message.author.tag + "\" performed command: " + command);
+
+    if (command === "help"){
+        message.channel.send("I've sent a PM to you, " + message.author + " :)");
+        message.author.send(
+            "Hello, " + message.author + "!\n\n" +
+            "Here's a list of things I can do:\n\n```" + 
+            config.prefix + "help                 - Shows this help menu.\n" +
+            config.prefix + "wm                   - Watermaks an image.\n" +
+            config.prefix + "rp                   - Sends a random panda image.\n" +
+            config.prefix + "rpg                  - Sends a random panda GIF.\n" +
+            config.prefix + "mute <user>          - Mutes a user.\n" +
+            config.prefix + "unmute <user> [time] - Unmutes a user.\n" +
+            config.prefix + "purge <count>        - Purges the last messages.```"
+        );
+    }
+
+    else if (command === "wm"){
         if (message.channel.name == config.botChannel){
             let attachment = message.attachments.array();
 
@@ -67,115 +83,64 @@ client.on("message", async message => {
     }
 
     //Get a red panda picture
-    if (command === "rp") sendImg(false, message, client);
+    else if (command === "rp") sendImg(false, message, client);
 
     // Get a red panda gif
-    if (command === "rpg") sendImg(true, message, client);
+    else if (command === "rpg") sendImg(true, message, client);
 
     // Remove the Talkpower group from user
-    if (command === "mute") {
+    else if (command === "mute") {
         let member = message.mentions.members.first();
         if (!message.member.roles.some(r => [config.adminRole, config.modRole].includes(r.name))) {
-            message.channel.overwritePermissions(message.member, {
-                    SEND_MESSAGES: false,
-                    ADD_REACTIONS: false
-                })
-                .catch(console.error);
-            helper.timer('2m', function() {
-                message.channel.overwritePermissions(message.member, {
-                        SEND_MESSAGES: true,
-                        ADD_REACTIONS: true
-                    })
-                    .catch(console.error);
-                message.channel.send(`${message.member.user} you just got unmuted`);
-            });
-            return message.reply("Sorry, you don't have permissions to use this! You have been muted for 2 Minutes");
+            message.reply("Sorry, you don't have permissions to use this! You have been muted for 2 Minutes");
+            log("Permission denied for user \"" + message.author.tag + "\"");
+            return helper.mute(message.member, message.channel, "2m");
         }
-        if (!member)
-            return message.reply("Please mention a valid member of this server");
-        let time = args.slice(1).join(' ');
-        if (time.toString().length == 1) {
-            time = time.toString() + 's';
+
+        if (!member) return message.reply("Please mention a valid member of this server");
+
+        let time = args.slice(1).join(" ");
+        if (time.toString().includes("-")) return message.channel.send("Do not use negative values!");
+
+        if (!time.toString().includes("s") && !time.toString().includes("m") && !time.toString().includes("h")){
+            return message.channel.send("Please include whether the specified time is in hours (" + time + "h), minutes (" + time + "m) or seconds (" + time + "s).");
         }
-        if (time.toString().includes('-')) {
-            return message.channel.send(`Do not use negative values!`)
-        }
-        message.channel.overwritePermissions(member, {
-                SEND_MESSAGES: false,
-                ADD_REACTIONS: false
-            })
-            .catch(console.error);
-        if (time) {
-            message.channel.send(`${member.user} you just got muted for ${time}`);
-        } else {
-            message.channel.send(`${member.user} you just got muted`);
-        }
-        if (time) {
-            helper.timer(time, function() {
-                message.channel.overwritePermissions(member, {
-                        SEND_MESSAGES: true,
-                        ADD_REACTIONS: true
-                    })
-                    .catch(console.error);
-                message.channel.send(`${member.user} you just got unmuted`);
-            });
-        }
+
+        helper.mute(member, message.channel, (helper.isset(time) ? time : false));
+
+        message.channel.send(`${member.user} you just got muted` + (isset(time) ? `for ${time}.` : "."));
     }
+
     // Add the Talkpower group from user
-    if (command === "unmute") {
+    else if (command === "unmute") {
         let member = message.mentions.members.first();
         if (!message.member.roles.some(r => [config.adminRole, config.modRole].includes(r.name))) {
-            message.channel.overwritePermissions(message.member, {
-                    SEND_MESSAGES: false,
-                    ADD_REACTIONS: false
-                })
-                .catch(console.error);
-            helper.timer('2m', function() {
-                message.channel.overwritePermissions(message.member, {
-                        SEND_MESSAGES: true,
-                        ADD_REACTIONS: true
-                    })
-                    .catch(console.error);
-                message.channel.send(`${message.member.user} you just got unmuted`);
-            });
-            return message.reply("Sorry, you don't have permissions to use this! You have been muted for 2 Minutes");
+            message.reply("Sorry, you don't have permissions to use this! You have been muted for 2 Minutes");
+            log("Permission denied for user \"" + message.author.tag + "\"");
+            return helper.mute(message.member, message.channel, "2m");
         }
-        if (!member)
-            return message.reply("Please mention a valid member of this server");
-        message.channel.overwritePermissions(member, {
-                SEND_MESSAGES: true,
-                ADD_REACTIONS: true
-            })
-            .catch(console.error);
-        message.channel.send(`${member.user} you just got unmuted`);
+        if (!member) return message.reply("Please mention a valid member of this server");
+        helper.unmute(message.member, message.channel);
     }
+
     // This command removes all messages from all users in the channel, up to 100.
-    if (command === "purge") {
-        if (!message.member.roles.some(r => [config.adminRole, config.modRole].includes(r.name))) {
-            message.channel.overwritePermissions(message.member, {
-                    SEND_MESSAGES: false,
-                    ADD_REACTIONS: false
-                })
-                .catch(console.error);
-            helper.timer('2m', function() {
-                message.channel.overwritePermissions(message.member, {
-                        SEND_MESSAGES: true,
-                        ADD_REACTIONS: true
-                    })
-                    .catch(console.error);
-                message.channel.send(`${message.member.user} you just got unmuted`);
-            });
-            return message.reply("Sorry, you don't have permissions to use this! You have been muted for 2 Minutes");
+    else if (command === "purge") {
+        if (!message.member.roles.some(r => [config.adminRole, config.modRole].includes(r.name))){
+            message.reply("Sorry, you don't have permissions to use this! You have been muted for 2 Minutes");
+            log("Permission denied for user \"" + message.author.tag + "\"");
+            return helper.mute(message.member, message.channel, "2m");
         }
+
         const deleteCount = parseInt(args[0], 10);
+
         message.reply(deleteCount);
-        if (!deleteCount || deleteCount < 1 || deleteCount > 98)
-            return message.reply("Please provide a number between 1 and 98 for the number of messages to delete");
+        if (!deleteCount || deleteCount < 1 || deleteCount > 98) return message.reply("Please provide a number between 1 and 98 for the number of messages to delete");
+
         const fetched = await message.channel.fetchMessages({
             limit: deleteCount + 2
         });
-        message.channel.bulkDelete(fetched)
-            .catch(error => message.reply(`Couldn't delete messages because of: ${error}`));
+
+        message.channel.bulkDelete(fetched).catch(error => message.reply(`Couldn't delete messages because of: ${error}`));
     }
 });
 
