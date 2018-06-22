@@ -1,6 +1,7 @@
 {
   "token": "verstehichnursosemi.png",
   "prefix": "!",
+  "botstatus": "Saving the internet...",
   "adminRole": "Teamlead",
   "modRole": "Moderator",
   "botChannel": "botspam",
