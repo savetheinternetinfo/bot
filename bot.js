@@ -7,7 +7,7 @@ let Discord = require("discord.js");
 
 let conf    = require("./utils/configurator");
 let log     = require("./utils/logger");
-let pWM     = require("./utils/watermark");
+let helper  = require("./utils/helper");
 let sendImg = require("./utils/imagehandler");
 
 const client = new Discord.Client();
@@ -23,6 +23,8 @@ console.log(
     " #" + "-".repeat(12 + appname.length + version.toString().length) + "#\n"
 );
 
+helper.init();
+
 client.on("ready", () => {
     log("Running...");
     log(`Got ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} guilds`);
@@ -37,28 +39,6 @@ client.on("guildDelete", guild => {
     log(`Bot was removed from: ${guild.name} (id: ${guild.id})`); 
 });
 
-
-// --- HELPER ---
-
-let download = function(uri, filename, callback){
-    try {
-        request.head(uri, function(err, res, body){
-            if (err) callback(err);
-            request(uri).pipe(fs.createWriteStream(filename)).on("close", callback);
-        });
-    }
-    catch (err){ callback(err); }
-};
-
-//Set a timer for callback function
-let timer = function(time, callback){
-    setTimeout(function(){
-        callback();
-    }, ms(time));
-};
-
-// --- DISCORD ---
-
 client.on("message", async message => {
     if (message.author.bot) return;
     if (message.content.indexOf(config.prefix) !== 0) return;
@@ -70,13 +50,13 @@ client.on("message", async message => {
         if (message.channel.name == config.botChannel){
             let attachment = message.attachments.array();
 
-            download(attachment[0].url, "input.png", function(err){
+            helper.download(attachment[0].url, "input.png", function(err){
                 if (err){
                     message.channel.send("Oh neim! Da is was schief gegangen =(");
                     return log(err);
                 }
 
-                pWM.watermark("input.png", function(){
+                helper.watermark("input.png", function(){
                     message.channel.send("Jetst griegst du 1 littez Bild", {
                         files: ["watermark.png"]
                     });
@@ -101,7 +81,7 @@ client.on("message", async message => {
                     ADD_REACTIONS: false
                 })
                 .catch(console.error);
-            timer('2m', function() {
+            helper.timer('2m', function() {
                 message.channel.overwritePermissions(message.member, {
                         SEND_MESSAGES: true,
                         ADD_REACTIONS: true
@@ -131,7 +111,7 @@ client.on("message", async message => {
             message.channel.send(`${member.user} you just got muted`);
         }
         if (time) {
-            timer(time, function() {
+            helper.timer(time, function() {
                 message.channel.overwritePermissions(member, {
                         SEND_MESSAGES: true,
                         ADD_REACTIONS: true
@@ -150,7 +130,7 @@ client.on("message", async message => {
                     ADD_REACTIONS: false
                 })
                 .catch(console.error);
-            timer('2m', function() {
+            helper.timer('2m', function() {
                 message.channel.overwritePermissions(message.member, {
                         SEND_MESSAGES: true,
                         ADD_REACTIONS: true
@@ -177,7 +157,7 @@ client.on("message", async message => {
                     ADD_REACTIONS: false
                 })
                 .catch(console.error);
-            timer('2m', function() {
+            helper.timer('2m', function() {
                 message.channel.overwritePermissions(message.member, {
                         SEND_MESSAGES: true,
                         ADD_REACTIONS: true
