@@ -1,0 +1,9 @@
+node_modules
+tmp
+notes
+config.json
+input.png
+panda.png
+watermark.png
+.DS_Store
+

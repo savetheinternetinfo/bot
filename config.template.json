@@ -1,0 +1,9 @@
+{
+  "token": "verstehichnursosemi.png",
+  "prefix": "!",
+  "adminRole": "Teamlead",
+  "modRole": "Moderator",
+  "botChannel": "botspam",
+  "redPandaImage": "http://api.pandarosso.eu/random?max_size=8000000",
+  "redPandaGIF": "http://api.pandarosso.eu/random?type=gif"
+}
