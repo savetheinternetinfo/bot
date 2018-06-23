@@ -3,9 +3,10 @@
 let fs      = require("fs");
 let ms      = require("ms");
 let request = require("request");
+let gm = require('gm').subClass({imageMagick: true});
 
-let isset = function(obj){ 
-    return !!(obj && obj !== null && (typeof obj === 'string' || typeof obj === 'number' && obj !== "") || obj === 0); 
+let isset = function(obj){
+    return !!(obj && obj !== null && (typeof obj === 'string' || typeof obj === 'number' && obj !== "") || obj === 0);
 };
 
 let init = function(){
